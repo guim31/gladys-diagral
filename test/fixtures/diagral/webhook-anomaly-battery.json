@@ -1,0 +1,12 @@
+{
+  "transmitter_id": "BOXSERIAL0001",
+  "alarm_code": "1384",
+  "alarm_description": "RF-LOW-BATTERY",
+  "group_index": "03",
+  "detail": {
+    "device_type": "SENSOR",
+    "device_index": "4",
+    "device_label": null
+  },
+  "date_time": "2026-10-14T08:15:12.000000+00:00"
+}

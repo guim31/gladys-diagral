@@ -1,0 +1,41 @@
+{
+  "created_at": "2026-10-14T08:15:12.625165",
+  "sensors": [
+    {
+      "serial": "SENSORSERIAL4",
+      "index": 4,
+      "group": 3,
+      "label": "Porte garage",
+      "anomaly_names": [
+        {
+          "id": 101,
+          "name": "powerSupplyAlert"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "serial": "COMMANDSERIAL2",
+      "index": 2,
+      "group": null,
+      "label": "Télécommande",
+      "anomaly_names": [
+        {
+          "id": 102,
+          "name": "powerSupplyAlert"
+        }
+      ]
+    }
+  ],
+  "central": [
+    {
+      "anomaly_names": [
+        {
+          "id": 103,
+          "name": "autoprotectionMechanicalAlert"
+        }
+      ]
+    }
+  ]
+}

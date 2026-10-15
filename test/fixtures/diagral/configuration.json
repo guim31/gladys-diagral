@@ -1,0 +1,236 @@
+{
+  "alarm": {
+    "box": {
+      "serial": "BOXSERIAL0001",
+      "vendor": "diagral",
+      "firmwares": {
+        "BOX": "1.6.0"
+      }
+    },
+    "tls": false,
+    "name": "Maison",
+    "plug": {
+      "vendor": "diagral"
+    },
+    "central": {
+      "name": "",
+      "serial": "CENTRALSERIAL1",
+      "vendor": "diagral",
+      "firmwares": {
+        "CENTRAL": "6.3.2",
+        "CENTRALRADIO": "11"
+      }
+    },
+    "forcePushConfig": false
+  },
+  "groups": [
+    {
+      "name": "Rez-de-chaussée",
+      "index": 1,
+      "inputDelay": 30,
+      "outputDelay": 60
+    },
+    {
+      "name": "Étage",
+      "index": 2,
+      "inputDelay": 30,
+      "outputDelay": 60
+    },
+    {
+      "name": "Garage",
+      "index": 3,
+      "inputDelay": 45,
+      "outputDelay": 60
+    },
+    {
+      "name": "",
+      "index": 4,
+      "inputDelay": 0,
+      "outputDelay": 0
+    }
+  ],
+  "sirens": [
+    {
+      "type": 4,
+      "gamme": 2,
+      "index": 1,
+      "label": "Sirène extérieure",
+      "serial": "SIRENSERIAL01",
+      "refCode": "900B",
+      "anomalies": {
+        "radioAlert": false,
+        "powerSupplyAlert": false,
+        "autoprotectionMechanicalAlert": false
+      },
+      "inhibited": false,
+      "canInhibit": true
+    }
+  ],
+  "sensors": [
+    {
+      "uid": "0A1B2C",
+      "type": 2,
+      "gamme": 2,
+      "group": 1,
+      "index": 1,
+      "label": "Porte d'entrée",
+      "serial": "SENSORSERIAL1",
+      "isVideo": false,
+      "refCode": "903A",
+      "subtype": 0,
+      "anomalies": {
+        "radioAlert": false,
+        "powerSupplyAlert": false,
+        "autoprotectionMechanicalAlert": false,
+        "loopAlert": false,
+        "maskAlert": false,
+        "sensorAlert": false
+      },
+      "inhibited": false,
+      "canInhibit": true
+    },
+    {
+      "uid": "0A1B2D",
+      "type": 2,
+      "gamme": 2,
+      "group": 1,
+      "index": 2,
+      "label": "Séjour",
+      "serial": "SENSORSERIAL2",
+      "isVideo": true,
+      "refCode": "903B",
+      "subtype": 0,
+      "anomalies": {
+        "radioAlert": false,
+        "powerSupplyAlert": false,
+        "autoprotectionMechanicalAlert": false,
+        "loopAlert": false,
+        "maskAlert": false,
+        "sensorAlert": false
+      },
+      "inhibited": false,
+      "canInhibit": true
+    },
+    {
+      "uid": "0A1B2E",
+      "type": 2,
+      "gamme": 2,
+      "group": 2,
+      "index": 3,
+      "label": "Couloir étage",
+      "serial": "SENSORSERIAL3",
+      "isVideo": false,
+      "refCode": "903A",
+      "subtype": 0,
+      "anomalies": {
+        "radioAlert": false,
+        "powerSupplyAlert": false,
+        "autoprotectionMechanicalAlert": false,
+        "loopAlert": false,
+        "maskAlert": false,
+        "sensorAlert": false
+      },
+      "inhibited": false,
+      "canInhibit": true
+    },
+    {
+      "uid": "0A1B2F",
+      "type": 2,
+      "gamme": 2,
+      "group": 3,
+      "index": 4,
+      "label": "Porte garage",
+      "serial": "SENSORSERIAL4",
+      "isVideo": false,
+      "refCode": "903A",
+      "subtype": 0,
+      "anomalies": {
+        "radioAlert": false,
+        "powerSupplyAlert": false,
+        "autoprotectionMechanicalAlert": false,
+        "loopAlert": false,
+        "maskAlert": false,
+        "sensorAlert": false
+      },
+      "inhibited": false,
+      "canInhibit": true
+    }
+  ],
+  "commands": [
+    {
+      "type": 3,
+      "gamme": 2,
+      "index": 1,
+      "label": "Clavier entrée",
+      "serial": "COMMANDSERIAL1",
+      "refCode": "9012",
+      "subType": 2,
+      "anomalies": {
+        "radioAlert": false,
+        "powerSupplyAlert": false,
+        "autoprotectionMechanicalAlert": false
+      },
+      "inhibited": false,
+      "canInhibit": true
+    },
+    {
+      "type": 3,
+      "gamme": 2,
+      "index": 2,
+      "label": "Télécommande",
+      "serial": "COMMANDSERIAL2",
+      "refCode": "9013",
+      "subType": 1,
+      "anomalies": {
+        "radioAlert": false,
+        "powerSupplyAlert": false,
+        "autoprotectionMechanicalAlert": false
+      },
+      "inhibited": false,
+      "canInhibit": true
+    }
+  ],
+  "transmitters": [
+    {
+      "type": 5,
+      "gamme": 2,
+      "index": 1,
+      "label": "Transmetteur",
+      "isPlug": false,
+      "serial": "TRANSSERIAL01",
+      "refCode": "9037",
+      "anomalies": {
+        "radioAlert": false,
+        "autoprotectionMechanicalAlert": false,
+        "mediaGSMAlert": false,
+        "mediaRTCAlert": false,
+        "mediaADSLAlert": false,
+        "outOfOrderAlert": false,
+        "mainPowerSupplyAlert": false,
+        "secondaryPowerSupplyAlert": false
+      },
+      "inhibited": false,
+      "canInhibit": false
+    }
+  ],
+  "presenceGroup": [1, 3],
+  "installationState": 2,
+  "centralInformation": {
+    "hasPlug": false,
+    "plugGSM": false,
+    "plugRTC": false,
+    "plugADSL": false,
+    "anomalies": {
+      "autoprotectionMechanicalAlert": false,
+      "mainPowerSupplyAlert": false,
+      "secondaryPowerSupplyAlert": false,
+      "defaultMediaAlert": false,
+      "autoprotectionWiredAlert": false
+    },
+    "relayCard": false,
+    "canInhibit": false,
+    "parameterGsmSaved": false
+  },
+  "partialGroup1": [1],
+  "partialGroup2": [1, 2]
+}

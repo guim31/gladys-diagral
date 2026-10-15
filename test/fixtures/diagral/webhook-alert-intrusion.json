@@ -1,0 +1,12 @@
+{
+  "transmitter_id": "BOXSERIAL0001",
+  "alarm_code": "1130",
+  "alarm_description": "INTRUSION",
+  "group_index": "01",
+  "detail": {
+    "device_type": "SENSOR",
+    "device_index": "2",
+    "device_label": null
+  },
+  "date_time": "2026-10-14T21:42:03.118254+00:00"
+}

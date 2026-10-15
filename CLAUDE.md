@@ -31,16 +31,25 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only (src/app.js), graceful shutdown
+src/app.js                        every SDK handler -> the hub; manifest actions (ACTIONS)
+src/hub.js                        the alarm: timer, reads, states, scene triggers, webhook,
+                                  commands, connection status, logs
+src/diagral/client.js             Emerald API: sign-in, API key, HMAC signature, error kinds
+src/diagral/model.js              API answers and webhook events -> plain objects (states,
+                                  groups, faults, alarm kinds)
+src/diagral/http.js               the HTTP seam (fetch); the tests replace it
+src/devices.js                    the Gladys device and its feature values, pure functions
+src/scenes.js, src/widgets.js     scene action `set_alarm_mode`, widget `alarm`
+src/texts.js                      every user-facing text, en/fr/de/es
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+src/store.js                      /data/diagral-state.json (API key, webhook fingerprint)
+scripts/probe.mjs                 probe of the real cloud (run where the network allows)
+gladys-assistant-integration.json manifest
+docs/{en,fr,de,es}.md             user documentation, same sections (test/i18n.test.js)
+test/                             node --test; fixtures/diagral = made-up answers in the shapes of
+                                  pydiagral, helpers/fakeCloud.js = fake cloud (HMAC checked),
+                                  helpers/world.js = fake Gladys + cloud + clock
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +79,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** comes in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, widget, feature and manifest
+  texts, and `docs/en.md`, `fr`, `de`, `es` with the same sections
+  (`test/i18n.test.js` checks it).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +244,43 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Diagral e-ONE (propre à cette intégration)
+
+- **API « Emerald »** de l'application Diagral e-ONE, `https://appv3.tt-monitor.com/emerald/v1`, sans
+  quota publié (Home Assistant lit toutes les 5 min). Lue dans pydiagral et hass-diagral (Marc Guyard,
+  **GPL-3.0** : lues pour comprendre le protocole, rien recopié ; les fixtures sont inventées, dans
+  leurs formes). Doc officielle citée par pydiagral : `/emerald/redoc`. Le proxy de la session de code
+  refuse `appv3.tt-monitor.com` : `scripts/probe.mjs` est à lancer ailleurs.
+- **Clé d'API** : `POST users/authenticate/login?vendor=DIAGRAL` (e-mail, mot de passe) → jeton Bearer,
+  qui ne sert qu'à `POST users/api_key` `{ serial_id }` → `{ api_key, secret_key }` et à
+  `DELETE users/systems/<serial>/api_keys/<clé>`. Tout le reste est signé : `X-HMAC` = HMAC-SHA256 hex
+  de `"<timestamp s>.<serial>.<api_key>"` avec le secret, `X-TIMESTAMP`, `X-APIKEY`, et `X-PIN-CODE`
+  (le code d'accès) pour `status` et les commandes. La clé vit dans `/data`, liée au couple
+  e-mail/numéro de série ; une clé refusée est remplacée **une fois** (l'ancienne supprimée), refusée
+  encore → erreur ACCESS et plus aucune lecture jusqu'à un changement de configuration ou un scan
+  (sinon une clé par lecture, et un compte qui peut se bloquer). Un mot de passe refusé (AUTH) arrête
+  aussi tout.
+- **État** : `GET systems/<serial>/status` → `{ status, activated_groups }`, status `OFF`, `GROUP`,
+  `PRESENCE`, `TEMPO_GROUP`, `TEMPO_1`, `TEMPO_2` (temporisation de sortie). `GROUP` avec tous les
+  groupes de la configuration = marche totale, sinon partielle. **Aucun état « alarme »** dans l'API :
+  un déclenchement ne se sait que par le webhook. Commandes `POST systems/<serial>/start|stop|presence|
+partial_start_1|partial_start_2|activate_group {groups}`, réponse = le nouvel état.
+- **Anomalies** : `GET systems/<serial>/anomalies`, **404 « No anomalies found » quand il n'y en a pas**.
+  Les noms d'anomalies sont les drapeaux de la configuration (`powerSupplyAlert`, `radioAlert`,
+  `autoprotectionMechanicalAlert`…) : classés en piles, autoprotection, liaison, autre
+  (`src/diagral/model.js`). Le classement d'un nom inconnu tombe dans « autre ».
+- **Webhook** (`webhooks/<serial>/subscription`, GET/POST/PUT/DELETE) : **un seul par box**, il remplace
+  celui d'un autre outil. Corps : `transmitter_id`, `alarm_code` (Contact ID ; 1xxx événement, 3xxx
+  rétablissement), `group_index` (un numéro, ou `NIGHT_MODE_GROUP_CODE`), `detail`, `user`,
+  `date_time`. Diagral ne signe rien : l'adresse Gladys Plus est le secret. On n'accepte que le
+  transmetteur de la box, une fois par événement, une alarme de moins de 15 min ; mises en marche et
+  anomalies ne font que déclencher une lecture (doctrine « trigger, not data »).
+- « Session already opened » (FAQ de hass-diagral) : le cloud refuserait plusieurs sessions
+  simultanées sur une box ; non vu sur les requêtes signées. À surveiller dans les retours.
+- **Sécurité** : l'état est un `text/select` **toujours en lecture seule** ; armer passe par le widget
+  ou l'action de scène, selon `alarm_control` (`off` par défaut, `arm`, `full`) ; arrêter depuis le
+  widget demande `confirm`. « Alarme en cours » n'a **aucune valeur sans webhook** (publier 0 serait
+  mentir pendant une intrusion).
+- Jamais dans les journaux : mot de passe, code, clé, secret, jeton, signature, adresse du webhook,
+  e-mail, nom d'utilisateur (`user.username` du webhook ne sort que dans la variable de scène).
