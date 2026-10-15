@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-15
+
 ### Changed
 
 - The real-time webhook is now an option, "Real-time alarms (replaces another webhook)", off by
@@ -34,4 +36,5 @@ the notes of the version's GitHub Release.
 - "Arming from Gladys": off (default), arm only, or arm and disarm.
 - English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-diagral/commits/main
+[Unreleased]: https://github.com/guim31/gladys-diagral/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-diagral/releases/tag/v1.0.1

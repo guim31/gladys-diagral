@@ -1,6 +1,6 @@
 {
   "name": "gladys-diagral",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Gladys Assistant integration for the Diagral e-ONE alarm, through the Diagral cloud.",
   "type": "module",
