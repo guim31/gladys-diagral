@@ -1,0 +1,16 @@
+{
+  "transmitter_id": "BOXSERIAL0001",
+  "alarm_code": "3401",
+  "alarm_description": "LOCAL-ARMING-OF-GROUP",
+  "group_index": "NIGHT_MODE_GROUP_CODE",
+  "detail": {
+    "device_type": null,
+    "device_index": null,
+    "device_label": null
+  },
+  "user": {
+    "username": "Camille",
+    "user_type": "owner"
+  },
+  "date_time": "2026-10-14T21:30:00.008154+00:00"
+}

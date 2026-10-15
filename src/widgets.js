@@ -1,169 +1,176 @@
 // -----------------------------------------------------------------------------
-// Dashboard widgets (SDK v0.14+, Gladys 5.1+).
+// The `alarm` dashboard widget: the state of the Diagral alarm, its armed
+// groups and faults, and the arming buttons the configuration allows.
 //
-// A widget puts the integration's own data on the Gladys dashboard without a
-// dedicated core widget. The manifest `widgets` field declares its identity
-// (key, label, icon, optional per-instance `settings`); at runtime the
-// integration returns a DECLARATIVE content — `text`, `value`, `gauge`,
-// `status`, `chart`, `card-list`, `image`, `button` — that the core renders
-// with its own theme, dark mode and translations. No HTML, no CSS.
-//
-// Each entry of WIDGETS is keyed by the widget `key` and exposes:
-//   - get(gladys, { settings, language, units, config }): the content,
-//     registered by index.js with `gladys.onWidgetGet(key, ...)`;
-//   - action(gladys, { actionKey, params, settings, config }) (optional): a
-//     tapped `button` carrying an `action`, registered with
-//     `gladys.onWidgetAction`.
-//
-// Check your contents in the tests with `validateWidgetContent` (exported by
-// the SDK, see test/widgets.test.js), or run with DEBUG=gladys-integration-sdk
-// to have the SDK log every violation of the vocabulary and the budget.
+// Budget of the core: 8 components, 2 texts. Here: one heading, one status
+// list, up to four buttons (or a caption when arming from Gladys is off). The
+// current mode is marked by the check-circle icon, never by the `primary`
+// style, invisible in dark mode (Gladys#3153). Disarming asks for a
+// confirmation (`confirm: true`).
 // -----------------------------------------------------------------------------
 
-import {
-  createLogger,
-  DEVICE_FEATURE_CATEGORIES,
-  DEVICE_TRANSPORTS,
-  WIDGET_COLORS,
-} from '@gladysassistant/integration-sdk';
-import { identifyDevice } from './devices/index.js';
-import { weatherStation } from './devices/weatherStation.js';
-import { plug } from './devices/plug.js';
-import { light } from './devices/light.js';
+import { WIDGET_COLORS } from '@gladysassistant/integration-sdk';
+import { UserError, WIDGET_KEY } from './hub.js';
+import { ALARM_STATES } from './diagral/model.js';
+import { COMMAND_NAMES, MESSAGES, commandDone, pick } from './texts.js';
 
-const logger = createLogger({ name: 'widgets' });
-
-// Widget key, as declared in the manifest `widgets` field.
-export const DEMO_STATUS_WIDGET = 'demo_status';
-
-// Keys of the `button` actions the demo_status content declares.
-const DEMO_STATUS_ACTIONS = { IDENTIFY_LIGHT: 'identify_light' };
-
-// How the plug transport reads in the status list.
-const TRANSPORT_STATUS = {
-  [DEVICE_TRANSPORTS.LOCAL]: { value: { en: 'Local', fr: 'Locale' }, color: WIDGET_COLORS.SUCCESS },
-  [DEVICE_TRANSPORTS.CLOUD]: { value: { en: 'Cloud', fr: 'Cloud' }, color: WIDGET_COLORS.INFO },
-  [DEVICE_TRANSPORTS.UNREACHABLE]: {
-    value: { en: 'Unreachable', fr: 'Injoignable' },
-    color: WIDGET_COLORS.DANGER,
+// Texts of the widget, by language.
+export const TEXT = {
+  en: {
+    title: 'Diagral',
+    state: 'Alarm',
+    alarm: 'ALARM IN PROGRESS',
+    groups: 'Armed groups',
+    faults: 'Faults',
+    none: 'None',
+    cloud: 'Diagral cloud',
+    offline: 'Unreachable',
+    controlOff: 'Arming from Gladys is off (configuration).',
+    empty: 'Fill in your Diagral account in the configuration of the integration.',
+  },
+  fr: {
+    title: 'Diagral',
+    state: 'Alarme',
+    alarm: 'ALARME EN COURS',
+    groups: 'Groupes en marche',
+    faults: 'Anomalies',
+    none: 'Aucune',
+    cloud: 'Cloud Diagral',
+    offline: 'Injoignable',
+    controlOff: 'Armement depuis Gladys désactivé (configuration).',
+    empty: "Renseignez votre compte Diagral dans la configuration de l'intégration.",
+  },
+  de: {
+    title: 'Diagral',
+    state: 'Alarm',
+    alarm: 'ALARM LÄUFT',
+    groups: 'Eingeschaltete Gruppen',
+    faults: 'Störungen',
+    none: 'Keine',
+    cloud: 'Diagral-Cloud',
+    offline: 'Nicht erreichbar',
+    controlOff: 'Einschalten über Gladys ist aus (Konfiguration).',
+    empty: 'Gib dein Diagral-Konto in der Konfiguration der Integration ein.',
+  },
+  es: {
+    title: 'Diagral',
+    state: 'Alarma',
+    alarm: 'ALARMA EN CURSO',
+    groups: 'Grupos armados',
+    faults: 'Anomalías',
+    none: 'Ninguna',
+    cloud: 'Nube Diagral',
+    offline: 'Inaccesible',
+    controlOff: 'El armado desde Gladys está desactivado (configuración).',
+    empty: 'Indique su cuenta Diagral en la configuración de la integración.',
   },
 };
 
-// A live tile references a feature by its external_id: read it from the
-// discovery payload itself, so the widget and the device never disagree.
-function featureExternalId(gladys, config, blueprint, category) {
-  const device = blueprint.buildDevice(gladys, config);
-  return device.features.find((feature) => feature.category === category).external_id;
+const STATE_STYLE = {
+  [ALARM_STATES.DISARMED]: { color: WIDGET_COLORS.NEUTRAL, icon: 'shield-off' },
+  [ALARM_STATES.ARMING]: { color: WIDGET_COLORS.WARNING, icon: 'clock' },
+  [ALARM_STATES.ARMED]: { color: WIDGET_COLORS.SUCCESS, icon: 'shield' },
+  [ALARM_STATES.PARTIAL]: { color: WIDGET_COLORS.SUCCESS, icon: 'shield' },
+  [ALARM_STATES.PRESENCE]: { color: WIDGET_COLORS.SUCCESS, icon: 'moon' },
+};
+
+// The state a command leads to, to mark the current one.
+const STATE_OF_COMMAND = {
+  arm: ALARM_STATES.ARMED,
+  presence: ALARM_STATES.PRESENCE,
+  disarm: ALARM_STATES.DISARMED,
+};
+const COMMAND_ICONS = {
+  arm: 'lock',
+  presence: 'moon',
+  partial_1: 'home',
+  partial_2: 'home',
+  disarm: 'unlock',
+};
+// Action keys of the buttons: one per button (the core drops a duplicate key).
+const ACTION_KEYS = {
+  arm: 'arm',
+  presence: 'presence',
+  partial_1: 'partial_1',
+  partial_2: 'partial_2',
+  disarm: 'disarm',
+};
+export const WIDGET_COMMANDS = Object.keys(ACTION_KEYS);
+
+const clip = (value, max = 40) => (value.length > max ? `${value.slice(0, max - 1)}…` : value);
+
+function statusItems(view, t) {
+  const style = STATE_STYLE[view.state];
+  const items = view.triggered
+    ? [{ label: t.state, value: t.alarm, color: WIDGET_COLORS.DANGER, icon: 'alert-triangle' }]
+    : [{ label: t.state, value: clip(view.stateLabel), color: style.color, icon: style.icon }];
+  if (view.armedGroups > 0 && view.state !== ALARM_STATES.DISARMED) {
+    items.push({
+      label: t.groups,
+      value: clip(view.groups),
+      color: WIDGET_COLORS.INFO,
+      icon: 'layers',
+    });
+  }
+  items.push({
+    label: t.faults,
+    value: view.faults > 0 ? clip(view.faultsText) : t.none,
+    color: view.faults > 0 ? WIDGET_COLORS.WARNING : WIDGET_COLORS.SUCCESS,
+    icon: view.faults > 0 ? 'alert-circle' : 'check',
+  });
+  if (!view.online) {
+    items.push({
+      label: t.cloud,
+      value: t.offline,
+      color: WIDGET_COLORS.DANGER,
+      icon: 'cloud-off',
+    });
+  }
+  return items;
 }
 
-function plugConnectionStatus(gladys, config) {
-  const { transport, degraded } = plug.transport(gladys, config);
-  const { value, color } = TRANSPORT_STATUS[transport];
-  if (degraded) {
-    return {
-      value: { en: `${value.en} (degraded mode)`, fr: `${value.fr} (mode dégradé)` },
-      color: WIDGET_COLORS.WARNING,
-    };
+function buttons(view, language) {
+  const names = pick(COMMAND_NAMES, language);
+  // Four buttons at most: one partial mode, the first the alarm has.
+  const partial = view.partial1 ? ['partial_1'] : view.partial2 ? ['partial_2'] : [];
+  const commands = ['arm', ...partial, 'presence', ...(view.canDisarm ? ['disarm'] : [])];
+  return commands.map((command) => ({
+    type: 'button',
+    label: names[command],
+    // The current mode is marked by its icon (the primary style does not show in dark mode).
+    icon: STATE_OF_COMMAND[command] === view.state ? 'check-circle' : COMMAND_ICONS[command],
+    style: command === 'disarm' ? 'danger' : 'secondary',
+    action: {
+      key: ACTION_KEYS[command],
+      params: { command },
+      ...(command === 'disarm' ? { confirm: true } : {}),
+    },
+  }));
+}
+
+export function alarmContent(hub, { language = 'en' } = {}) {
+  const t = TEXT[language] ?? TEXT.en;
+  const view = hub.view(language);
+  if (!view) {
+    return { ttl_seconds: 60, components: [{ type: 'text', variant: 'body', text: t.empty }] };
   }
-  return { value, color };
+  const components = [
+    { type: 'text', variant: 'heading', text: clip(view.name || t.title) },
+    { type: 'status', items: statusItems(view, t) },
+  ];
+  if (view.canArm) components.push(...buttons(view, language));
+  else components.push({ type: 'text', variant: 'caption', text: t.controlOff });
+  return { ttl_seconds: 60, components };
 }
 
 export const WIDGETS = {
-  [DEMO_STATUS_WIDGET]: {
-    // `settings` holds the per-instance values of the declared `settings`
-    // (none here); `language` and `units` are those of the user viewing the
-    // dashboard, for the values you format yourself. Multi-language objects
-    // (`{ en, fr }`) are picked by the core, like everywhere else.
-    async get(gladys, { config }) {
-      logger.debug(`onWidgetGet <- ${DEMO_STATUS_WIDGET}`);
-      return {
-        // Reload policy: the computed parts below only change with the
-        // config, and index.js nudges the widget on every (re)connection and
-        // config update (see refreshWidgets) — the TTL is just a safety net.
-        ttl_seconds: 300,
-        components: [
-          // Device-bound tiles: LIVE, they follow the published states over
-          // the core's real-time path. No TTL, no nudge involved.
-          {
-            type: 'value',
-            label: { en: 'Temperature', fr: 'Température' },
-            icon: 'thermometer',
-            device_feature: featureExternalId(
-              gladys,
-              config,
-              weatherStation,
-              DEVICE_FEATURE_CATEGORIES.TEMPERATURE_SENSOR,
-            ),
-          },
-          {
-            type: 'value',
-            label: { en: 'Office plug', fr: 'Prise du bureau' },
-            icon: 'zap',
-            device_feature: featureExternalId(
-              gladys,
-              config,
-              plug,
-              DEVICE_FEATURE_CATEGORIES.ENERGY_SENSOR,
-            ),
-          },
-          // Computed rows: what the integration knows that no device feature
-          // carries. Served from the core cache until the TTL or a nudge.
-          {
-            type: 'status',
-            items: [
-              {
-                label: { en: 'Plug connection', fr: 'Connexion de la prise' },
-                icon: 'wifi',
-                ...plugConnectionStatus(gladys, config),
-              },
-              {
-                label: { en: 'Observed location', fr: 'Position observée' },
-                icon: 'map-pin',
-                value: `${config.latitude.toFixed(2)}, ${config.longitude.toFixed(2)}`,
-                color: WIDGET_COLORS.NEUTRAL,
-              },
-            ],
-          },
-          // `params` are declared HERE and sent back as-is: the handler never
-          // receives user input (a dashboard can hang on a public wall).
-          {
-            type: 'button',
-            label: { en: 'Identify the light', fr: 'Identifier la lampe' },
-            icon: 'eye',
-            style: 'secondary',
-            action: {
-              key: DEMO_STATUS_ACTIONS.IDENTIFY_LIGHT,
-              params: { device: light.deviceExternalId(gladys) },
-            },
-          },
-        ],
-      };
-    },
-
-    // Resolve an optional toast (string or multi-language object, ≤ 200
-    // characters). After a successful action the core drops the cached
-    // content and every open dashboard refetches it: no nudge needed.
-    async action(gladys, { actionKey, params, config }) {
-      logger.info(`onWidgetAction <- ${DEMO_STATUS_WIDGET}.${actionKey}`);
-      if (actionKey === DEMO_STATUS_ACTIONS.IDENTIFY_LIGHT) {
-        return identifyDevice(gladys, params.device, config);
-      }
-      // Throwing acks the action as failed: the message reaches the user.
-      throw new Error(`Unknown widget action: ${actionKey}`);
+  [WIDGET_KEY]: {
+    get: (hub, request) => alarmContent(hub, request),
+    async action(hub, { params = {} }) {
+      const command = String(params.command ?? '');
+      if (!WIDGET_COMMANDS.includes(command)) throw new UserError(MESSAGES.failed);
+      await hub.setMode(command, { origin: 'widget' });
+      return commandDone(command);
     },
   },
 };
-
-/**
- * Freshness nudge: ask the core to re-pull every widget NOW instead of
- * waiting for the content TTL. Call it when you KNOW a computed content
- * changed (here: the config, which drives the plug transport and the observed
- * location) — and after every (re)connection, since the nudges are
- * fire-and-forget: rate-limited core-side to 1 per 10 s per widget, dropped
- * silently while disconnected.
- */
-export function refreshWidgets(gladys) {
-  for (const key of Object.keys(WIDGETS)) {
-    gladys.requestWidgetRefresh(key);
-  }
-}

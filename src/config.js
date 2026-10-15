@@ -1,45 +1,69 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
+// Integration configuration: defaults (they mirror the `default` values of the
+// manifest `config_schema`, see test/manifest.test.js) and normalization, so
+// the rest of the code never deals with strings, blanks or `undefined`.
 //
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// The Diagral account (e-mail, password), the serial of the box and the
+// access code live in the Gladys configuration; the API key the integration
+// creates with them lives in /data (src/store.js).
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+export const LANGUAGES = ['en', 'fr', 'de', 'es'];
+
+// Seconds between two reads of the alarm. Home Assistant reads every 5
+// minutes and Diagral publishes no quota: 5 minutes by default, the Gladys
+// Plus webhook brings arming, alarms and faults in real time anyway.
+export const REFRESH_INTERVALS = ['60', '120', '300', '600'];
+
+// What Gladys may do with the alarm: nothing (it shows the state), arm it,
+// or arm and disarm it. Values stored in the configuration: never change one.
+export const ALARM_CONTROLS = ['off', 'arm', 'full'];
+
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  alarm_control: 'off',
+  refresh_interval: '300',
+  language: 'fr',
 };
 
+const pickOption = (value, options, fallback) =>
+  options.includes(String(value ?? '')) ? String(value) : fallback;
+
+const text = (value) => (typeof value === 'string' ? value.trim() : '');
+
 /**
- * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ * @param {Record<string, unknown>} raw the configuration returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const control = pickOption(source.alarm_control, ALARM_CONTROLS, DEFAULT_CONFIG.alarm_control);
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    username: text(source.username),
+    // A password may begin or end with a space: kept as typed.
+    password: typeof source.password === 'string' ? source.password : '',
+    // The serial is printed in capitals on the label of the box; spaces and
+    // dashes copied with it are dropped.
+    serial: text(source.serial).replace(/[\s-]/g, '').toUpperCase(),
+    pinCode: text(source.pin_code),
+    alarmControl: control,
+    canArm: control !== 'off',
+    canDisarm: control === 'full',
+    refreshMs:
+      Number(
+        pickOption(source.refresh_interval, REFRESH_INTERVALS, DEFAULT_CONFIG.refresh_interval),
+      ) * 1000,
+    language: pickOption(source.language, LANGUAGES, DEFAULT_CONFIG.language),
   };
 }
+
+/** What is missing before the account can be read: a list of config keys. */
+export function missingSettings(config) {
+  const missing = [];
+  if (!config.username) missing.push('username');
+  if (!config.password) missing.push('password');
+  if (!config.serial) missing.push('serial');
+  if (!/^\d{1,12}$/.test(config.pinCode)) missing.push('pin_code');
+  return missing;
+}
+
+/** The account a stored API key belongs to: a new one needs a new key. */
+export const accountOf = (config) => `${config.username.toLowerCase()}|${config.serial}`;

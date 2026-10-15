@@ -1,0 +1,9 @@
+{
+  "transmitter_id": "BOXSERIAL0001",
+  "webhook_url": "https://hook.example.com/other-tool",
+  "subscriptions": {
+    "anomaly": true,
+    "alert": false,
+    "state": true
+  }
+}

@@ -1,177 +1,811 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Diagral e-ONE",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Diagral e-ONE alarm over the Diagral cloud: state, faults, alarms, arming from Gladys.",
+    "fr": "Alarme Diagral e-ONE via le cloud Diagral : état, anomalies, alarmes, armement depuis Gladys.",
+    "de": "Diagral-e-ONE-Alarmanlage über die Cloud: Status, Störungen, Alarme, Einschalten über Gladys.",
+    "es": "Alarma Diagral e-ONE por la nube Diagral: estado, anomalías, alarmas, armado desde Gladys."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-diagral:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-diagral/main/cover.png",
+  "categories": ["security"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Before you start",
+        "fr": "Avant de commencer",
+        "de": "Bevor du loslegst",
+        "es": "Antes de empezar"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "This integration follows your Diagral e-ONE alarm through the Diagral cloud, like the Diagral e-ONE app: state, armed groups, faults (batteries, tamper protection, link) and, with Gladys Plus, alarms in real time. It needs a box connected to the Internet (DIAG56AAX, or the box built into a DIAG99AGX control panel). Developed without the hardware: feedback welcome. Not affiliated with Diagral or Hager.",
+        "fr": "Cette intégration suit votre alarme Diagral e-ONE par le cloud Diagral, comme l'application Diagral e-ONE : état, groupes en marche, anomalies (piles, autoprotection, liaison) et, avec Gladys Plus, les alarmes en temps réel. Il faut une box reliée à Internet (DIAG56AAX, ou la box intégrée à une centrale DIAG99AGX). Développée sans le matériel : retours bienvenus. Sans lien avec Diagral ni Hager.",
+        "de": "Diese Integration verfolgt deine Diagral-e-ONE-Alarmanlage über die Diagral-Cloud, wie die App Diagral e-ONE: Status, eingeschaltete Gruppen, Störungen (Batterien, Sabotageschutz, Verbindung) und mit Gladys Plus die Alarme in Echtzeit. Nötig ist eine mit dem Internet verbundene Box (DIAG56AAX oder die in eine Zentrale DIAG99AGX eingebaute Box). Ohne die Hardware entwickelt: Rückmeldungen willkommen. Nicht mit Diagral oder Hager verbunden.",
+        "es": "Esta integración sigue su alarma Diagral e-ONE a través de la nube Diagral, como la aplicación Diagral e-ONE: estado, grupos armados, anomalías (pilas, autoprotección, enlace) y, con Gladys Plus, las alarmas en tiempo real. Necesita una caja conectada a Internet (DIAG56AAX, o la caja integrada en una central DIAG99AGX). Desarrollada sin el hardware: se agradecen sus comentarios. Sin relación con Diagral ni Hager."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-diagral/blob/main/docs/en.md",
+          "label": {
+            "en": "Step-by-step guide",
+            "fr": "Guide pas à pas",
+            "de": "Schritt-für-Schritt-Anleitung",
+            "es": "Guía paso a paso"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "E-mail address",
+        "fr": "Adresse e-mail",
+        "de": "E-Mail-Adresse",
+        "es": "Correo electrónico"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "The one of your Diagral e-ONE app account.",
+        "fr": "Celle de votre compte de l'application Diagral e-ONE.",
+        "de": "Die deines Kontos der App Diagral e-ONE.",
+        "es": "La de su cuenta de la aplicación Diagral e-ONE."
+      },
+      "placeholder": {
+        "en": "you@example.com",
+        "fr": "vous@exemple.fr",
+        "de": "du@beispiel.de",
+        "es": "usted@ejemplo.es"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "The password of the Diagral e-ONE app. It is only sent to Diagral to create the API key.",
+        "fr": "Le mot de passe de l'application Diagral e-ONE. Il ne part chez Diagral que pour créer la clé d'API.",
+        "de": "Das Passwort der App Diagral e-ONE. Es geht nur an Diagral, um den API-Schlüssel zu erstellen.",
+        "es": "La contraseña de la aplicación Diagral e-ONE. Solo se envía a Diagral para crear la clave de API."
+      },
+      "required": true
     },
     {
-      "key": "unit",
+      "key": "serial",
+      "type": "string",
+      "label": {
+        "en": "Serial number of the box",
+        "fr": "Numéro de série de la box",
+        "de": "Seriennummer der Box",
+        "es": "Número de serie de la caja"
+      },
+      "description": {
+        "en": "14 characters, on the label with a QR code inside the box (open its cover).",
+        "fr": "14 caractères, sur l'étiquette à QR code à l'intérieur de la box (ouvrez son capot).",
+        "de": "14 Zeichen, auf dem Etikett mit QR-Code im Inneren der Box (Deckel öffnen).",
+        "es": "14 caracteres, en la etiqueta con código QR dentro de la caja (abra su tapa)."
+      },
+      "placeholder": {
+        "en": "e.g. 12345678ABCDEF",
+        "fr": "ex. 12345678ABCDEF",
+        "de": "z. B. 12345678ABCDEF",
+        "es": "p. ej. 12345678ABCDEF"
+      },
+      "required": true
+    },
+    {
+      "key": "pin_code",
+      "type": "secret",
+      "label": {
+        "en": "Access code of the alarm",
+        "fr": "Code d'accès de l'alarme",
+        "de": "Zugangscode der Alarmanlage",
+        "es": "Código de acceso de la alarma"
+      },
+      "description": {
+        "en": "The code typed in the Diagral e-ONE app to see and control the alarm (master code or a user code). Diagral asks for it at every read.",
+        "fr": "Le code saisi dans l'application Diagral e-ONE pour voir et commander l'alarme (code maître ou code d'un utilisateur). Diagral le demande à chaque lecture.",
+        "de": "Der Code, den du in der App Diagral e-ONE eingibst, um die Alarmanlage zu sehen und zu steuern (Mastercode oder Benutzercode). Diagral verlangt ihn bei jeder Abfrage.",
+        "es": "El código que introduce en la aplicación Diagral e-ONE para ver y controlar la alarma (código maestro o de un usuario). Diagral lo pide en cada lectura."
+      },
+      "required": true
+    },
+    {
+      "key": "alarm_control",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Arming from Gladys",
+        "fr": "Armement depuis Gladys",
+        "de": "Einschalten über Gladys",
+        "es": "Armado desde Gladys"
+      },
+      "description": {
+        "en": "Off: Gladys shows the state of the alarm, never changes it. Arm only: the widget and the scenes can arm. Arm and disarm: anyone using your Gladys dashboards and scenes can also disarm. Never like a switch, nor by voice.",
+        "fr": "Désactivé : Gladys affiche l'état de l'alarme sans jamais le changer. Armer seulement : le widget et les scènes peuvent mettre en marche. Armer et désarmer : quiconque utilise vos tableaux de bord et scènes peut aussi arrêter l'alarme. Jamais comme un interrupteur, ni à la voix.",
+        "de": "Aus: Gladys zeigt den Alarmstatus an und ändert ihn nie. Nur einschalten: Widget und Szenen können einschalten. Ein- und ausschalten: Wer deine Dashboards und Szenen nutzt, kann auch ausschalten. Nie wie ein Schalter, nie per Sprache.",
+        "es": "Desactivado: Gladys muestra el estado de la alarma sin cambiarlo nunca. Solo armar: el widget y las escenas pueden armar. Armar y desarmar: quien use sus paneles y escenas también puede desarmar. Nunca como un interruptor, ni por voz."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "off",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "off",
+          "label": {
+            "en": "Off (state only)",
+            "fr": "Désactivé (état seul)",
+            "de": "Aus (nur Status)",
+            "es": "Desactivado (solo estado)"
+          }
+        },
+        {
+          "value": "arm",
+          "label": {
+            "en": "Arm only",
+            "fr": "Armer seulement",
+            "de": "Nur einschalten",
+            "es": "Solo armar"
+          }
+        },
+        {
+          "value": "full",
+          "label": {
+            "en": "Arm and disarm",
+            "fr": "Armer et désarmer",
+            "de": "Ein- und ausschalten",
+            "es": "Armar y desarmar"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "refresh_interval",
+      "type": "select",
+      "label": {
+        "en": "Reading of the alarm",
+        "fr": "Lecture de l'alarme",
+        "de": "Abfrage der Alarmanlage",
+        "es": "Lectura de la alarma"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "How often the state and the faults are read from the Diagral cloud. With the Gladys Plus webhook, alarms, armings and faults arrive in real time anyway.",
+        "fr": "Fréquence de lecture de l'état et des anomalies sur le cloud Diagral. Avec le webhook Gladys Plus, alarmes, mises en marche et anomalies arrivent de toute façon en temps réel.",
+        "de": "Wie oft Status und Störungen aus der Diagral-Cloud gelesen werden. Mit dem Gladys-Plus-Webhook kommen Alarme, Einschaltungen und Störungen ohnehin in Echtzeit.",
+        "es": "Frecuencia de lectura del estado y de las anomalías en la nube Diagral. Con el webhook de Gladys Plus, alarmas, armados y anomalías llegan en tiempo real de todos modos."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "300",
+      "options": [
+        {
+          "value": "60",
+          "label": {
+            "en": "Every minute",
+            "fr": "Toutes les minutes",
+            "de": "Jede Minute",
+            "es": "Cada minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "Every 2 minutes",
+            "fr": "Toutes les 2 minutes",
+            "de": "Alle 2 Minuten",
+            "es": "Cada 2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "Every 5 minutes",
+            "fr": "Toutes les 5 minutes",
+            "de": "Alle 5 Minuten",
+            "es": "Cada 5 minutos"
+          }
+        },
+        {
+          "value": "600",
+          "label": {
+            "en": "Every 10 minutes",
+            "fr": "Toutes les 10 minutes",
+            "de": "Alle 10 Minuten",
+            "es": "Cada 10 minutos"
+          }
+        }
+      ]
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names and texts",
+        "fr": "Langue des noms et des textes",
+        "de": "Sprache der Namen und Texte",
+        "es": "Idioma de nombres y textos"
+      },
+      "description": {
+        "en": "Names of the features and texts of the anomalies. Gladys keeps the names chosen when the device is added.",
+        "fr": "Noms des fonctionnalités et textes des anomalies. Gladys garde les noms choisis à l'ajout de l'appareil.",
+        "de": "Namen der Funktionen und Texte der Störungen. Gladys behält die Namen, die beim Hinzufügen des Geräts gewählt wurden.",
+        "es": "Nombres de las funciones y textos de las anomalías. Gladys conserva los nombres elegidos al añadir el dispositivo."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "English",
+            "de": "English",
+            "es": "English"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "Français",
+            "fr": "Français",
+            "de": "Français",
+            "es": "Français"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "Deutsch",
+            "fr": "Deutsch",
+            "de": "Deutsch",
+            "es": "Deutsch"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Español",
+            "fr": "Español",
+            "de": "Español",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads the state and the faults of the alarm. Nothing is armed or disarmed.",
+        "fr": "Lit l'état et les anomalies de l'alarme. Rien n'est mis en marche ni arrêté.",
+        "de": "Liest Status und Störungen der Alarmanlage. Nichts wird ein- oder ausgeschaltet.",
+        "es": "Lee el estado y las anomalías de la alarma. No se arma ni se desarma nada."
+      },
+      "timeout_seconds": 60
     },
     {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "renew_api_key",
+      "label": {
+        "en": "Renew the API key",
+        "fr": "Renouveler la clé d'API",
+        "de": "API-Schlüssel erneuern",
+        "es": "Renovar la clave de API"
+      },
+      "description": {
+        "en": "Creates a new API key on the Diagral cloud and deletes the previous one.",
+        "fr": "Crée une nouvelle clé d'API sur le cloud Diagral et supprime l'ancienne.",
+        "de": "Erstellt einen neuen API-Schlüssel in der Diagral-Cloud und löscht den alten.",
+        "es": "Crea una nueva clave de API en la nube Diagral y elimina la anterior."
+      },
+      "timeout_seconds": 60
+    }
+  ],
+  "webhooks": [
+    {
+      "key": "events",
+      "label": {
+        "en": "Diagral events (alarms, armings, faults)",
+        "fr": "Événements Diagral (alarmes, mises en marche, anomalies)",
+        "de": "Diagral-Ereignisse (Alarme, Einschaltungen, Störungen)",
+        "es": "Eventos Diagral (alarmas, armados, anomalías)"
+      },
+      "mode": "fire_and_forget"
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "alarm_triggered",
+      "label": {
+        "en": "Diagral alarm triggered",
+        "fr": "Alarme Diagral déclenchée",
+        "de": "Diagral-Alarm ausgelöst",
+        "es": "Alarma Diagral disparada"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "The Diagral alarm went off: intrusion, panic, fire or technical alarm. Needs the Gladys Plus webhook.",
+        "fr": "L'alarme Diagral s'est déclenchée : intrusion, panique, incendie ou alarme technique. Nécessite le webhook Gladys Plus.",
+        "de": "Die Diagral-Alarmanlage hat ausgelöst: Einbruch, Panik, Feuer oder technischer Alarm. Braucht den Gladys-Plus-Webhook.",
+        "es": "La alarma Diagral se disparó: intrusión, pánico, incendio o alarma técnica. Requiere el webhook de Gladys Plus."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "alarm",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Alarm (empty: any)",
+            "fr": "Alarme (vide : toutes)",
+            "de": "Alarmanlage (leer: alle)",
+            "es": "Alarma (vacío: todas)"
+          }
         },
         {
-          "key": "target",
+          "key": "kind",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "label": {
+            "en": "Kind of alarm (empty: any)",
+            "fr": "Type d'alarme (vide : tous)",
+            "de": "Art des Alarms (leer: alle)",
+            "es": "Tipo de alarma (vacío: todos)"
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "intrusion",
+              "label": {
+                "en": "Intrusion",
+                "fr": "Intrusion",
+                "de": "Einbruch",
+                "es": "Intrusión"
+              }
+            },
+            {
+              "value": "panic",
+              "label": {
+                "en": "Panic",
+                "fr": "Panique",
+                "de": "Panik",
+                "es": "Pánico"
+              }
+            },
+            {
+              "value": "fire",
+              "label": {
+                "en": "Fire",
+                "fr": "Incendie",
+                "de": "Feuer",
+                "es": "Incendio"
+              }
+            },
+            {
+              "value": "technical",
+              "label": {
+                "en": "Technical (water, temperature…)",
+                "fr": "Technique (eau, température…)",
+                "de": "Technisch (Wasser, Temperatur …)",
+                "es": "Técnica (agua, temperatura…)"
+              }
+            },
+            {
+              "value": "other",
+              "label": {
+                "en": "Other",
+                "fr": "Autre",
+                "de": "Andere",
+                "es": "Otra"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "kind",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Kind of alarm",
+            "fr": "Type d'alarme",
+            "de": "Art des Alarms",
+            "es": "Tipo de alarma"
+          }
+        },
+        {
+          "key": "device",
+          "type": "string",
+          "label": {
+            "en": "Detector",
+            "fr": "Détecteur",
+            "de": "Melder",
+            "es": "Detector"
+          }
+        },
+        {
+          "key": "group",
+          "type": "string",
+          "label": {
+            "en": "Group",
+            "fr": "Groupe",
+            "de": "Gruppe",
+            "es": "Grupo"
+          }
+        },
+        {
+          "key": "code",
+          "type": "number",
+          "label": {
+            "en": "Diagral code",
+            "fr": "Code Diagral",
+            "de": "Diagral-Code",
+            "es": "Código Diagral"
+          }
+        }
+      ]
+    },
+    {
+      "key": "alarm_mode_changed",
+      "label": {
+        "en": "Diagral armed or disarmed",
+        "fr": "Diagral mise en marche ou arrêtée",
+        "de": "Diagral ein- oder ausgeschaltet",
+        "es": "Diagral armada o desarmada"
+      },
+      "description": {
+        "en": "The Diagral alarm changed mode, from a keypad, a remote control, the app or Gladys, with the name of the user when Diagral gives it.",
+        "fr": "L'alarme Diagral a changé de mode, depuis un clavier, une télécommande, l'application ou Gladys, avec le nom de l'utilisateur quand Diagral le donne.",
+        "de": "Die Diagral-Alarmanlage hat den Modus gewechselt, per Bedienteil, Fernbedienung, App oder Gladys, mit dem Namen des Benutzers, wenn Diagral ihn nennt.",
+        "es": "La alarma Diagral cambió de modo, desde un teclado, un mando, la aplicación o Gladys, con el nombre del usuario cuando Diagral lo indica."
+      },
+      "fields": [
+        {
+          "key": "alarm",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Alarm (empty: any)",
+            "fr": "Alarme (vide : toutes)",
+            "de": "Alarmanlage (leer: alle)",
+            "es": "Alarma (vacío: todas)"
+          }
+        },
+        {
+          "key": "mode",
+          "type": "multi_select",
+          "label": {
+            "en": "New mode (empty: any)",
+            "fr": "Nouveau mode (vide : tous)",
+            "de": "Neuer Modus (leer: alle)",
+            "es": "Nuevo modo (vacío: todos)"
+          },
+          "options": [
+            {
+              "value": "disarmed",
+              "label": {
+                "en": "Disarmed",
+                "fr": "Arrêt",
+                "de": "Ausgeschaltet",
+                "es": "Desarmada"
+              }
+            },
+            {
+              "value": "armed",
+              "label": {
+                "en": "Fully armed",
+                "fr": "Marche totale",
+                "de": "Komplett eingeschaltet",
+                "es": "Armada (total)"
+              }
+            },
+            {
+              "value": "partial",
+              "label": {
+                "en": "Partially armed",
+                "fr": "Marche partielle",
+                "de": "Teilweise eingeschaltet",
+                "es": "Armada (parcial)"
+              }
+            },
+            {
+              "value": "presence",
+              "label": {
+                "en": "Presence mode",
+                "fr": "Marche présence",
+                "de": "Anwesenheitsmodus",
+                "es": "Modo presencia"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "mode",
+          "type": "string",
+          "label": {
+            "en": "New mode",
+            "fr": "Nouveau mode",
+            "de": "Neuer Modus",
+            "es": "Nuevo modo"
+          }
+        },
+        {
+          "key": "changed_by",
+          "type": "string",
+          "label": {
+            "en": "Changed by",
+            "fr": "Changé par",
+            "de": "Geändert von",
+            "es": "Cambiado por"
+          }
+        }
+      ]
+    },
+    {
+      "key": "fault_reported",
+      "label": {
+        "en": "Diagral fault reported",
+        "fr": "Anomalie Diagral signalée",
+        "de": "Diagral-Störung gemeldet",
+        "es": "Anomalía Diagral señalada"
+      },
+      "description": {
+        "en": "A new fault appeared on the Diagral alarm: low batteries, tamper protection, radio or transmission link, or another one.",
+        "fr": "Une nouvelle anomalie est apparue sur l'alarme Diagral : piles faibles, autoprotection, liaison radio ou transmission, ou autre.",
+        "de": "Eine neue Störung ist an der Diagral-Alarmanlage aufgetreten: schwache Batterien, Sabotageschutz, Funk- oder Übertragungsverbindung oder eine andere.",
+        "es": "Apareció una nueva anomalía en la alarma Diagral: pilas bajas, autoprotección, enlace radio o de transmisión, u otra."
+      },
+      "fields": [
+        {
+          "key": "alarm",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Alarm (empty: any)",
+            "fr": "Alarme (vide : toutes)",
+            "de": "Alarmanlage (leer: alle)",
+            "es": "Alarma (vacío: todas)"
+          }
+        },
+        {
+          "key": "kind",
+          "type": "multi_select",
+          "label": {
+            "en": "Kind of fault (empty: any)",
+            "fr": "Type d'anomalie (vide : tous)",
+            "de": "Art der Störung (leer: alle)",
+            "es": "Tipo de anomalía (vacío: todos)"
+          },
+          "options": [
+            {
+              "value": "battery",
+              "label": {
+                "en": "Batteries or power",
+                "fr": "Piles ou alimentation",
+                "de": "Batterien oder Strom",
+                "es": "Pilas o alimentación"
+              }
+            },
+            {
+              "value": "tamper",
+              "label": {
+                "en": "Tamper protection",
+                "fr": "Autoprotection",
+                "de": "Sabotageschutz",
+                "es": "Autoprotección"
+              }
+            },
+            {
+              "value": "link",
+              "label": {
+                "en": "Radio or transmission link",
+                "fr": "Liaison radio ou transmission",
+                "de": "Funk- oder Übertragungsverbindung",
+                "es": "Enlace radio o transmisión"
+              }
+            },
+            {
+              "value": "other",
+              "label": {
+                "en": "Other",
+                "fr": "Autre",
+                "de": "Andere",
+                "es": "Otra"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "kind",
+          "type": "string",
+          "label": {
+            "en": "Kind of fault",
+            "fr": "Type d'anomalie",
+            "de": "Art der Störung",
+            "es": "Tipo de anomalía"
+          }
+        },
+        {
+          "key": "device",
+          "type": "string",
+          "label": {
+            "en": "Device",
+            "fr": "Appareil",
+            "de": "Gerät",
+            "es": "Dispositivo"
+          }
+        },
+        {
+          "key": "fault",
+          "type": "string",
+          "label": {
+            "en": "Fault",
+            "fr": "Anomalie",
+            "de": "Störung",
+            "es": "Anomalía"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "set_alarm_mode",
+      "label": {
+        "en": "Arm or disarm Diagral",
+        "fr": "Mettre en marche ou arrêter Diagral",
+        "de": "Diagral ein- oder ausschalten",
+        "es": "Armar o desarmar Diagral"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Arms (fully, presence, partial 1 or 2, chosen groups) or disarms the Diagral alarm, as far as “Arming from Gladys” allows.",
+        "fr": "Met l'alarme Diagral en marche (totale, présence, partielle 1 ou 2, groupes choisis) ou l'arrête, dans la limite de « Armement depuis Gladys ».",
+        "de": "Schaltet die Diagral-Alarmanlage ein (komplett, Anwesenheit, teilweise 1 oder 2, gewählte Gruppen) oder aus, soweit „Einschalten über Gladys“ es erlaubt.",
+        "es": "Arma (total, presencia, parcial 1 o 2, grupos elegidos) o desarma la alarma Diagral, en la medida en que lo permita «Armado desde Gladys»."
+      },
+      "timeout_seconds": 45,
       "fields": [
         {
-          "key": "device",
+          "key": "alarm",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "label": {
+            "en": "Alarm (empty: the only one)",
+            "fr": "Alarme (vide : la seule)",
+            "de": "Alarmanlage (leer: die einzige)",
+            "es": "Alarma (vacío: la única)"
+          }
+        },
+        {
+          "key": "mode",
+          "type": "select",
+          "required": true,
+          "label": {
+            "en": "Command",
+            "fr": "Commande",
+            "de": "Befehl",
+            "es": "Orden"
+          },
+          "options": [
+            {
+              "value": "disarm",
+              "label": {
+                "en": "Disarm",
+                "fr": "Arrêt",
+                "de": "Ausschalten",
+                "es": "Desarmar"
+              }
+            },
+            {
+              "value": "arm",
+              "label": {
+                "en": "Arm fully",
+                "fr": "Marche totale",
+                "de": "Komplett ein",
+                "es": "Armar total"
+              }
+            },
+            {
+              "value": "presence",
+              "label": {
+                "en": "Presence",
+                "fr": "Marche présence",
+                "de": "Anwesenheit",
+                "es": "Presencia"
+              }
+            },
+            {
+              "value": "partial_1",
+              "label": {
+                "en": "Partial 1",
+                "fr": "Partielle 1",
+                "de": "Teilweise 1",
+                "es": "Parcial 1"
+              }
+            },
+            {
+              "value": "partial_2",
+              "label": {
+                "en": "Partial 2",
+                "fr": "Partielle 2",
+                "de": "Teilweise 2",
+                "es": "Parcial 2"
+              }
+            },
+            {
+              "value": "groups",
+              "label": {
+                "en": "Chosen groups",
+                "fr": "Groupes choisis",
+                "de": "Gewählte Gruppen",
+                "es": "Grupos elegidos"
+              }
+            }
+          ]
+        },
+        {
+          "key": "groups",
+          "type": "string",
+          "label": {
+            "en": "Groups (Chosen groups only)",
+            "fr": "Groupes (Groupes choisis seulement)",
+            "de": "Gruppen (nur Gewählte Gruppen)",
+            "es": "Grupos (solo Grupos elegidos)"
+          },
+          "placeholder": {
+            "en": "e.g. 1,3",
+            "fr": "ex. 1,3",
+            "de": "z. B. 1,3",
+            "es": "p. ej. 1,3"
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "state",
+          "type": "string",
+          "label": {
+            "en": "State after the command",
+            "fr": "État après la commande",
+            "de": "Status nach dem Befehl",
+            "es": "Estado tras la orden"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "alarm",
+      "label": {
+        "en": "Diagral alarm",
+        "fr": "Alarme Diagral",
+        "de": "Diagral-Alarmanlage",
+        "es": "Alarma Diagral"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Alarm state, armed groups, faults and the arming buttons allowed.",
+        "fr": "État de l'alarme, groupes en marche, anomalies et boutons d'armement autorisés.",
+        "de": "Alarmstatus, eingeschaltete Gruppen, Störungen und die erlaubten Knöpfe.",
+        "es": "Estado de la alarma, grupos armados, anomalías y botones de armado permitidos."
+      },
+      "icon": "shield",
+      "action_timeout_seconds": 45
     }
   ]
 }
