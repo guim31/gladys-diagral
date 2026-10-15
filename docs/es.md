@@ -78,16 +78,28 @@ anomalías (francés por defecto). Gladys conserva los nombres elegidos al añad
 La nube Diagral puede avisar de un evento mediante un **webhook**: alarma, armado o desarmado, nueva
 anomalía. Como Gladys está en su casa, ese webhook pasa por **Gladys Plus**.
 
+> **Atención: Diagral solo guarda un webhook por caja.** Si Home Assistant, Jeedom u otro software ya
+> recibe los eventos de su alarma, marcar la opción de abajo lo sustituye: ese otro software dejará de
+> recibir nada de Diagral.
+
+Por eso la opción **Alarmas en tiempo real (sustituye otro webhook)** está **desactivada por
+defecto**. Mientras lo esté, Gladys nunca lee, modifica ni elimina el webhook de su caja. Para
+activarla:
+
 1. En Gladys Plus, cree una clave Open API (Ajustes → Open API).
 2. Péguela en el bloque «Webhooks de Gladys Plus» de la pantalla de Configuración de la integración:
    indica «Eventos Diagral (alarmas, armados, anomalías)».
-3. La integración registra la dirección en Diagral por sí sola.
+3. Marque **Alarmas en tiempo real (sustituye otro webhook)**: la integración registra la dirección en
+   Diagral.
 
-Diagral **solo guarda un webhook por caja**: si otra herramienta (Home Assistant…) había registrado
-uno, se sustituye. Si retira la clave, la integración elimina el suyo en Diagral.
+Si desmarca la opción o retira la clave, la integración elimina su webhook en Diagral, pero solo si
+sigue siendo el suyo. El webhook de otro software nunca se elimina.
 
-Sin Gladys Plus, todo funciona mediante lecturas, salvo las **alarmas**, que la nube Diagral solo
-comunica por el webhook.
+**Sin la opción**, lo que queda y lo que se pierde: la API de Diagral no tiene historial de eventos.
+El estado, los grupos armados y las anomalías se siguen leyendo al ritmo elegido (5 minutos por
+defecto), y los disparadores de armado y de anomalía funcionan, con ese retraso. Pero una **alarma**
+nunca se ve: «Alarma en curso» queda sin valor y el disparador «Alarma Diagral disparada» nunca se
+produce. «Cambiado por» queda vacío.
 
 ### Acciones
 
@@ -169,7 +181,7 @@ Resultado: «Estado tras la orden», casi siempre un retardo de salida justo des
   de la etiqueta y el código. Un escaneo en la pestaña Descubrir vuelve a intentarlo.
 - **«La nube Diagral no responde»**: la integración sigue intentándolo y lo escribe una sola vez en
   los registros. ¿Funciona la aplicación Diagral e-ONE?
-- **Nada en tiempo real**: revise la clave Open API en el bloque «Webhooks de Gladys Plus». Otra
+- **Nada en tiempo real**: ¿Está marcada la opción «Alarmas en tiempo real»? Revise también la clave Open API en el bloque «Webhooks de Gladys Plus». Otra
   herramienta puede haber recuperado el webhook de su caja: Diagral solo guarda uno.
 - **Más detalles**: defina la variable `LOG_LEVEL=debug`. Los registros nunca contienen la contraseña,
   el código, la clave de API ni la dirección del webhook.

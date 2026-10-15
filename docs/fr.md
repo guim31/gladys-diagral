@@ -82,16 +82,28 @@ marche.
 Le cloud Diagral sait prévenir d'un événement par un **webhook** : déclenchement d'alarme, mise en
 marche ou arrêt, nouvelle anomalie. Gladys étant chez vous, ce webhook passe par **Gladys Plus**.
 
+> **Attention : Diagral ne garde qu'un seul webhook par box.** Si Home Assistant, Jeedom ou un autre
+> logiciel reçoit déjà les événements de votre alarme, cocher l'option ci-dessous le remplace : cet
+> autre logiciel ne recevra plus rien de Diagral.
+
+C'est pourquoi l'option **Alarmes en temps réel (remplace un autre webhook)** est **décochée par
+défaut**. Tant qu'elle l'est, Gladys ne lit, ne modifie ni ne supprime jamais le webhook de votre
+box. Pour l'activer :
+
 1. Dans Gladys Plus, créez une clé Open API (Réglages → Open API).
 2. Collez-la dans le bloc « Webhooks Gladys Plus » de l'écran Configuration de l'intégration : il
    annonce « Événements Diagral (alarmes, mises en marche, anomalies) ».
-3. L'intégration inscrit d'elle-même l'adresse chez Diagral.
+3. Cochez **Alarmes en temps réel (remplace un autre webhook)** : l'intégration inscrit l'adresse chez
+   Diagral.
 
-Diagral ne garde **qu'un webhook par box** : si un autre outil (Home Assistant…) en avait inscrit un,
-il est remplacé. Retirez la clé et l'intégration supprime le sien chez Diagral.
+Décochez l'option ou retirez la clé : l'intégration supprime son webhook chez Diagral, mais seulement
+s'il est encore le sien. Celui d'un autre logiciel n'est jamais supprimé.
 
-Sans Gladys Plus, tout fonctionne par lectures, sauf les **déclenchements d'alarme**, que le cloud
-Diagral ne signale que par le webhook.
+**Sans l'option**, ce qui reste et ce qu'on perd : l'API Diagral n'a pas d'historique des événements.
+L'état, les groupes en marche et les anomalies restent relus à la fréquence choisie (5 minutes par
+défaut), et les déclencheurs de mise en marche et d'anomalie fonctionnent, avec ce délai. Mais un
+**déclenchement d'alarme** n'est jamais visible : « Alarme en cours » reste sans valeur et le
+déclencheur « Alarme Diagral déclenchée » ne se produit pas. « Changé par » reste vide.
 
 ### Actions
 
@@ -179,7 +191,7 @@ mise en marche.
   de l'étiquette et le code. Un scan dans l'onglet Découverte réessaie.
 - **« Le cloud Diagral ne répond pas »** : l'intégration réessaie toute seule et l'écrit une seule fois
   dans les journaux. L'application Diagral e-ONE fonctionne-t-elle ?
-- **Rien en temps réel** : vérifiez la clé Open API dans le bloc « Webhooks Gladys Plus ». Un autre
+- **Rien en temps réel** : l'option « Alarmes en temps réel » est-elle cochée ? Vérifiez aussi la clé Open API dans le bloc « Webhooks Gladys Plus ». Un autre
   outil a pu reprendre le webhook de votre box : Diagral n'en garde qu'un.
 - **Plus de détails** : passez la variable `LOG_LEVEL=debug`. Les journaux ne contiennent jamais le mot
   de passe, le code, la clé d'API ni l'adresse du webhook.

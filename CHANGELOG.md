@@ -10,6 +10,13 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Changed
+
+- The real-time webhook is now an option, "Real-time alarms (replaces another webhook)", off by
+  default: Diagral keeps one webhook per box, and registering Gladys' replaced the one of Home
+  Assistant, Jeedom or any other software. Off, the integration never reads, changes nor deletes the
+  webhook of the box, and only ever deletes its own.
+
 ### Added
 
 - Connection to the Diagral e-ONE cloud with the account of the Diagral e-ONE app, the serial number

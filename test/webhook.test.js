@@ -26,8 +26,11 @@ import {
   stateOf,
 } from './helpers/world.js';
 
+// The option "Real-time alarms" is on, unless a test says otherwise.
+const REALTIME = { ...BASE_CONFIG, realtime_webhook: true };
+
 async function world(t, options = {}) {
-  const w = await createWorld({ webhooks: PLUS_WEBHOOKS, ...options });
+  const w = await createWorld({ webhooks: PLUS_WEBHOOKS, config: REALTIME, ...options });
   t.after(() => w.app.stop());
   return w;
 }
@@ -36,6 +39,45 @@ const post = (w, body) => w.fake.webhook('events', { method: 'POST', body: JSON.
 
 // The alarm of the fixture was posted at 21:42:03; the clock of the world reads 21:42:30.
 const intrusion = () => fixture('webhook-alert-intrusion');
+
+test('off by default: the webhook of another software is never read nor touched', async (t) => {
+  const cloud = new FakeCloud();
+  cloud.webhook = fixture('webhook-subscription');
+  const w = await world(t, { cloud, config: BASE_CONFIG });
+  await createAll(w);
+  assert.deepEqual(cloud.webhook, fixture('webhook-subscription'));
+  assert.equal(
+    cloud.requests.filter((r) => r.path.startsWith('webhooks/')).length,
+    0,
+    'not even read',
+  );
+  assert.equal(stateOf(w, 'triggered'), undefined, 'no webhook: no "alarm in progress" value');
+  await w.fake.webhookUpdated(PLUS_WEBHOOKS);
+  await w.fake.scanRequest();
+  await w.fake.action('test_connection', {});
+  await settle();
+  assert.deepEqual(cloud.webhook, fixture('webhook-subscription'));
+  const free = await world(t, { config: BASE_CONFIG });
+  assert.equal(free.cloud.webhook, null, 'nothing registered either');
+});
+
+test('turning the option on registers, turning it off removes ours only', async (t) => {
+  const w = await world(t, { config: BASE_CONFIG });
+  assert.equal(w.cloud.webhook, null);
+  await w.fake.configUpdated(REALTIME);
+  await settle();
+  assert.equal(w.cloud.webhook.webhook_url, WEBHOOK_URL);
+  await w.fake.configUpdated(BASE_CONFIG);
+  await settle();
+  assert.equal(w.cloud.webhook, null, 'ours is deleted');
+  // Another software took the box webhook meanwhile: left alone when the option goes off.
+  await w.fake.configUpdated(REALTIME);
+  await settle();
+  w.cloud.webhook = fixture('webhook-subscription');
+  await w.fake.configUpdated(BASE_CONFIG);
+  await settle();
+  assert.deepEqual(w.cloud.webhook, fixture('webhook-subscription'));
+});
 
 test('Gladys Plus available: the webhook is registered at Diagral for every event', async (t) => {
   const w = await world(t);
@@ -84,7 +126,7 @@ test('without Gladys Plus nothing is registered; once removed, ours is deleted',
 test('an alarm: trigger, "Alarm in progress" until disarmed, widget in red', async (t) => {
   const cloud = new FakeCloud();
   cloud.status = fixture('status-group-total');
-  const w = await world(t, { cloud, config: { ...BASE_CONFIG, language: 'fr' } });
+  const w = await world(t, { cloud, config: { ...REALTIME, language: 'fr' } });
   await createAll(w);
   assert.equal(stateOf(w, 'triggered'), 0, 'with the webhook, "no alarm" is a value');
   await post(w, intrusion());

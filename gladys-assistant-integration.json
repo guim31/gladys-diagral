@@ -226,6 +226,24 @@
       ]
     },
     {
+      "key": "realtime_webhook",
+      "type": "boolean",
+      "label": {
+        "en": "Real-time alarms (replaces another webhook)",
+        "fr": "Alarmes en temps réel (remplace un autre webhook)",
+        "de": "Alarme in Echtzeit (ersetzt anderen Webhook)",
+        "es": "Alarmas en tiempo real (sustituye otro webhook)"
+      },
+      "description": {
+        "en": "Needs Gladys Plus. Diagral keeps only one webhook per box: if Home Assistant, Jeedom or another software receives the Diagral events, it stops receiving them. Off: Gladys never touches that webhook, reads the state every few minutes and cannot know when the alarm goes off.",
+        "fr": "Nécessite Gladys Plus. Diagral ne garde qu'un webhook par box : si Home Assistant, Jeedom ou un autre logiciel reçoit les événements Diagral, il ne les recevra plus. Désactivé : Gladys ne touche jamais à ce webhook, relit l'état périodiquement et ne peut pas savoir quand l'alarme se déclenche.",
+        "de": "Braucht Gladys Plus. Diagral behält nur einen Webhook pro Box: Empfängt Home Assistant, Jeedom oder eine andere Software die Diagral-Ereignisse, bekommt sie sie nicht mehr. Aus: Gladys rührt diesen Webhook nie an, liest den Status alle paar Minuten und kann nicht wissen, wann der Alarm auslöst.",
+        "es": "Requiere Gladys Plus. Diagral solo guarda un webhook por caja: si Home Assistant, Jeedom u otro software recibe los eventos Diagral, dejará de recibirlos. Desactivado: Gladys nunca toca ese webhook, lee el estado cada pocos minutos y no puede saber cuándo se dispara la alarma."
+      },
+      "required": false,
+      "default": false
+    },
+    {
       "key": "language",
       "type": "select",
       "label": {

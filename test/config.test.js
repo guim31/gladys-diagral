@@ -16,9 +16,12 @@ test('defaults: state only, a read every 5 minutes, French names', () => {
   assert.equal(config.language, 'fr');
   assert.deepEqual(DEFAULT_CONFIG, {
     alarm_control: 'off',
+    realtime_webhook: false,
     refresh_interval: '300',
     language: 'fr',
   });
+  assert.equal(config.realtimeWebhook, false, 'the webhook of another software is left alone');
+  assert.equal(normalizeConfig({ realtime_webhook: 'true' }).realtimeWebhook, true);
   assert.deepEqual(missingSettings(config), ['username', 'password', 'serial', 'pin_code']);
 });
 

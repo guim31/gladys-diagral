@@ -45,6 +45,8 @@ function captureLogs(t, level = 'info') {
   };
 }
 
+const REALTIME = { ...BASE_CONFIG, realtime_webhook: true };
+
 async function world(t, options = {}) {
   const w = await createWorld(options);
   t.after(() => w.app.stop());
@@ -53,7 +55,7 @@ async function world(t, options = {}) {
 
 test('the start writes its lifecycle at info', async (t) => {
   const logs = captureLogs(t);
-  await world(t, { webhooks: PLUS_WEBHOOKS });
+  await world(t, { webhooks: PLUS_WEBHOOKS, config: REALTIME });
   assert.deepEqual(logs.texts(), [
     '[INFO] [diagral-hub] API key created on the Diagral cloud',
     '[INFO] [diagral-hub] Connected to the Diagral cloud',
@@ -65,7 +67,7 @@ test('a normal cycle writes nothing at info', async (t) => {
   const logs = captureLogs(t);
   const cloud = new FakeCloud();
   cloud.anomalies = fixture('anomalies');
-  const w = await world(t, { cloud, webhooks: PLUS_WEBHOOKS });
+  const w = await world(t, { cloud, webhooks: PLUS_WEBHOOKS, config: REALTIME });
   await createAll(w);
   logs.clear();
   const [device] = w.fake.discoveredDevices;
@@ -122,7 +124,7 @@ test('no secret, address or user name in the logs, even at debug', async (t) => 
   const logs = captureLogs(t, 'debug');
   const cloud = new FakeCloud();
   cloud.webhook = fixture('webhook-subscription');
-  const w = await world(t, { cloud, webhooks: PLUS_WEBHOOKS });
+  const w = await world(t, { cloud, webhooks: PLUS_WEBHOOKS, config: REALTIME });
   await createAll(w);
   await w.fake.webhook('events', {
     method: 'POST',
