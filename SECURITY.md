@@ -45,6 +45,8 @@ particular:
   read and command the alarm through the API until the key is renewed
   ("Renew the API key") or revoked.
 - **Network**: HTTPS to the Diagral cloud only (`appv3.tt-monitor.com`).
+  The webhook is opt-in ("Real-time alarms", off by default): off, the
+  integration never reads, changes nor deletes the webhook of the box.
   Webhook events come through the Gladys Plus relay; their address is the
   secret (Diagral does not sign them). The integration only accepts events of
   the transmitter of the box, takes each one once, and treats arming and

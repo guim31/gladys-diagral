@@ -81,17 +81,27 @@ Französisch). Gladys behält die Namen, die beim Hinzufügen des Geräts gewäh
 Die Diagral-Cloud kann ein Ereignis über einen **Webhook** melden: Alarm, Ein- oder Ausschalten, neue
 Störung. Da Gladys bei dir zu Hause läuft, geht dieser Webhook über **Gladys Plus**.
 
+> **Achtung: Diagral behält nur einen Webhook pro Box.** Empfängt Home Assistant, Jeedom oder eine
+> andere Software schon die Ereignisse deiner Alarmanlage, ersetzt die Option unten diesen Webhook:
+> Die andere Software bekommt dann nichts mehr von Diagral.
+
+Deshalb ist die Option **Alarme in Echtzeit (ersetzt anderen Webhook)** **standardmäßig aus**.
+Solange sie aus ist, liest, ändert oder löscht Gladys den Webhook deiner Box nie. Zum Einschalten:
+
 1. Erstelle in Gladys Plus einen Open-API-Schlüssel (Einstellungen → Open API).
 2. Füge ihn im Block „Gladys-Plus-Webhooks“ des Bildschirms Konfiguration der Integration ein: Er
    nennt „Diagral-Ereignisse (Alarme, Einschaltungen, Störungen)“.
-3. Die Integration trägt die Adresse selbst bei Diagral ein.
+3. Aktiviere **Alarme in Echtzeit (ersetzt anderen Webhook)**: Die Integration trägt die Adresse bei
+   Diagral ein.
 
-Diagral behält **nur einen Webhook pro Box**: Hatte ein anderes Werkzeug (Home Assistant …) einen
-eingetragen, wird er ersetzt. Entfernst du den Schlüssel, löscht die Integration ihren eigenen bei
-Diagral.
+Schaltest du die Option aus oder entfernst du den Schlüssel, löscht die Integration ihren Webhook bei
+Diagral, aber nur, wenn es noch ihrer ist. Der Webhook einer anderen Software wird nie gelöscht.
 
-Ohne Gladys Plus funktioniert alles über Abfragen, außer den **Alarmen**, die die Diagral-Cloud nur
-über den Webhook meldet.
+**Ohne die Option**, was bleibt und was fehlt: Die Diagral-API hat keinen Ereignisverlauf. Status,
+eingeschaltete Gruppen und Störungen werden weiter im gewählten Takt gelesen (standardmäßig alle 5
+Minuten), und die Auslöser für Einschalten und Störungen funktionieren, mit dieser Verzögerung. Ein
+**Alarm** ist aber nie sichtbar: „Alarm läuft“ bleibt ohne Wert und der Auslöser „Diagral-Alarm
+ausgelöst“ kommt nie. „Geändert von“ bleibt leer.
 
 ### Aktionen
 
@@ -177,7 +187,7 @@ Ergebnis: „Status nach dem Befehl“, direkt nach dem Einschalten meist eine A
   Etiketts und den Code. Ein Scan im Tab Entdecken versucht es erneut.
 - **„Die Diagral-Cloud antwortet nicht“**: Die Integration versucht es weiter und schreibt es einmal
   in die Protokolle. Funktioniert die App Diagral e-ONE?
-- **Nichts in Echtzeit**: Prüfe den Open-API-Schlüssel im Block „Gladys-Plus-Webhooks“. Ein anderes
+- **Nichts in Echtzeit**: Ist die Option „Alarme in Echtzeit“ aktiviert? Prüfe auch den Open-API-Schlüssel im Block „Gladys-Plus-Webhooks“. Ein anderes
   Werkzeug könnte den Webhook deiner Box übernommen haben: Diagral behält nur einen.
 - **Mehr Details**: Setze die Variable `LOG_LEVEL=debug`. Die Protokolle enthalten nie das Passwort,
   den Code, den API-Schlüssel oder die Adresse des Webhooks.

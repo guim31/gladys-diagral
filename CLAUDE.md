@@ -270,8 +270,11 @@ partial_start_1|partial_start_2|activate_group {groups}`, réponse = le nouvel �
   Les noms d'anomalies sont les drapeaux de la configuration (`powerSupplyAlert`, `radioAlert`,
   `autoprotectionMechanicalAlert`…) : classés en piles, autoprotection, liaison, autre
   (`src/diagral/model.js`). Le classement d'un nom inconnu tombe dans « autre ».
-- **Webhook** (`webhooks/<serial>/subscription`, GET/POST/PUT/DELETE) : **un seul par box**, il remplace
-  celui d'un autre outil. Corps : `transmitter_id`, `alarm_code` (Contact ID ; 1xxx événement, 3xxx
+- **Webhook** (`webhooks/<serial>/subscription`, GET/POST/PUT/DELETE) : **un seul par box**, le nôtre
+  remplace celui d'un autre logiciel (Home Assistant, Jeedom…). D'où l'option `realtime_webhook`,
+  **décochée par défaut** (demande de l'orchestrateur, 15/10/2026) : décochée, on ne lit, ne modifie ni
+  ne supprime jamais le webhook de la box ; on ne supprime le nôtre que s'il l'est encore (empreinte
+  SHA-256 de l'adresse dans `/data`). Sans elle, pas d'alarme visible (l'API n'a pas d'historique). Corps : `transmitter_id`, `alarm_code` (Contact ID ; 1xxx événement, 3xxx
   rétablissement), `group_index` (un numéro, ou `NIGHT_MODE_GROUP_CODE`), `detail`, `user`,
   `date_time`. Diagral ne signe rien : l'adresse Gladys Plus est le secret. On n'accepte que le
   transmetteur de la box, une fois par événement, une alarme de moins de 15 min ; mises en marche et

@@ -17,9 +17,12 @@ from Gladys when you allow it.
 - **One device per alarm**: alarm state (disarmed, exit delay, fully armed, partially armed,
   presence mode), alarm in progress, armed groups, faults (text and number), low batteries, tamper
   protection, link fault, Diagral cloud reachable.
-- **Real time with Gladys Plus**: the integration registers the Gladys Plus webhook at Diagral and
-  receives alarms, armings and faults as they happen. Without Gladys Plus it reads the cloud on its
-  own timer (1 to 10 minutes, 5 by default).
+- **Real time with Gladys Plus, opt-in**: with the option "Real-time alarms", the integration
+  registers the Gladys Plus webhook at Diagral and receives alarms, armings and faults as they happen.
+  Diagral keeps one webhook per box, so this **replaces the webhook of another software** (Home
+  Assistant, Jeedom…): the option is off by default, and Gladys then never touches that webhook.
+  Otherwise the integration reads the cloud on its own timer (1 to 10 minutes, 5 by default) and
+  cannot see an alarm go off.
 - **Scenes**: triggers "Diagral alarm triggered" (intrusion, panic, fire, technical), "Diagral armed
   or disarmed" (with who did it when Diagral says so), "Diagral fault reported" (batteries, tamper,
   link); action "Arm or disarm Diagral" (fully, presence, partial 1 or 2, chosen groups, disarm).
@@ -44,7 +47,8 @@ from Gladys when you allow it.
    catalog once it is listed).
 2. In **Configuration**, fill in the e-mail address, the password, the serial number of the box and
    the access code. Choose what Gladys may do in **Arming from Gladys** (off by default).
-3. With Gladys Plus, paste an Open API key in the "Gladys Plus webhooks" block.
+3. For alarms in real time, with Gladys Plus: paste an Open API key in the "Gladys Plus webhooks"
+   block and tick **Real-time alarms** (it replaces the webhook of another software).
 4. Open the **Discover** tab and add the alarm.
 
 The user guide is in [`docs/en.md`](docs/en.md) (also in [French](docs/fr.md),
@@ -62,9 +66,11 @@ The user guide is in [`docs/en.md`](docs/en.md) (also in [French](docs/fr.md),
   groups, partial modes) every 6 hours; every 30 s during an exit delay. A 429 pauses the reads (1
   min, doubled up to 2 h). The integration refreshes itself (GladysAssistant/Gladys#3198), `onPoll`
   is a fallback.
-- **Webhook**: Diagral keeps one webhook per box. When Gladys Plus offers its relay, the integration
-  registers its address for alarms, states and anomalies (replacing another tool's), and deletes its
-  own when the relay goes away. An alarm fires the scene trigger at once; arming and fault events only
+- **Webhook**: Diagral keeps one webhook per box. Only when the user ticks "Real-time alarms" and
+  Gladys Plus offers its relay does the integration register its address for alarms, states and
+  anomalies (replacing another software's). It deletes its own, and only its own (by a fingerprint of
+  the address), when the option or the relay goes away; with the option off, the box webhook is never
+  even read. An alarm fires the scene trigger at once; arming and fault events only
   trigger a read (the API stays the reference). Events are taken once, only from the box's
   transmitter; an alarm more than 15 minutes late fires nothing.
 - **States**: only the changes, plus a heartbeat every 6 hours.

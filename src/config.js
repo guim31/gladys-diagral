@@ -21,12 +21,21 @@ export const ALARM_CONTROLS = ['off', 'arm', 'full'];
 
 export const DEFAULT_CONFIG = {
   alarm_control: 'off',
+  // Diagral keeps one webhook per box: registering ours replaces the one of
+  // another software (Home Assistant, Jeedom…). Only when the user says so.
+  realtime_webhook: false,
   refresh_interval: '300',
   language: 'fr',
 };
 
 const pickOption = (value, options, fallback) =>
   options.includes(String(value ?? '')) ? String(value) : fallback;
+
+// A boolean field may arrive as a string from older form engines.
+const flag = (value, fallback) =>
+  value === undefined || value === null || value === ''
+    ? fallback
+    : value === true || value === 'true';
 
 const text = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -47,6 +56,7 @@ export function normalizeConfig(raw = {}) {
     alarmControl: control,
     canArm: control !== 'off',
     canDisarm: control === 'full',
+    realtimeWebhook: flag(source.realtime_webhook, DEFAULT_CONFIG.realtime_webhook),
     refreshMs:
       Number(
         pickOption(source.refresh_interval, REFRESH_INTERVALS, DEFAULT_CONFIG.refresh_interval),

@@ -320,6 +320,7 @@ export class DiagralHub {
     }
     this.config = config;
     if (previous?.refreshMs !== config.refreshMs) this.schedule();
+    if (previous?.realtimeWebhook !== config.realtimeWebhook) await this.syncWebhook();
     if (previous?.language !== config.language && this.discovered) {
       // Names of a new device; Gladys keeps those of a device already added.
       this.structure = null;
@@ -692,11 +693,20 @@ export class DiagralHub {
 
   /**
    * Register the Gladys Plus address of the webhook at Diagral, or remove the
-   * one this integration registered when Gladys Plus no longer offers it.
-   * Best effort: without it, the reads still follow the alarm.
+   * one this integration registered when the option is off or Gladys Plus no
+   * longer offers it. Diagral keeps one webhook per box: without the option
+   * ("Receive alarms in real time"), the webhook of another software is never
+   * read, replaced nor deleted, and ours is deleted only when it is still
+   * ours. Best effort: without it, the reads still follow the alarm.
    */
   async syncWebhook(info = null) {
     if (!this.canRead() || !this.discovered) return;
+    const saved = this.store.get('webhook');
+    if (!this.config.realtimeWebhook) {
+      this.webhookOff();
+      if (saved) await this.removeOwnWebhook(saved);
+      return;
+    }
     let webhooks = info;
     if (!webhooks) {
       try {
@@ -709,18 +719,13 @@ export class DiagralHub {
     const url = webhooks?.available
       ? (webhooks.webhooks ?? []).find((webhook) => webhook.key === WEBHOOK_KEY)?.url
       : null;
-    const saved = this.store.get('webhook');
+    if (!url) {
+      this.webhookOff();
+      if (saved) await this.removeOwnWebhook(saved);
+      return;
+    }
     try {
       const current = await this.client.webhook();
-      if (!url) {
-        this.webhookActive = false;
-        if (saved && current?.webhook_url && sha256(current.webhook_url) === saved.hash) {
-          await this.client.deleteWebhook();
-          logger.info('Gladys Plus webhook removed at Diagral: reads only');
-        }
-        if (saved) await this.store.update({ webhook: undefined });
-        return;
-      }
       const subscriptions = current?.subscriptions ?? {};
       let answer = current;
       if (
@@ -752,6 +757,26 @@ export class DiagralHub {
     } catch (err) {
       this.webhookActive = false;
       this.problem('webhook', `Diagral webhook not registered (${err.message}): reads only`);
+    }
+  }
+
+  /** No more webhook: "no alarm" is no longer known, so it is no longer sent. */
+  webhookOff() {
+    this.webhookActive = false;
+    if (this.alarm.triggered === false) this.alarm.triggered = null;
+  }
+
+  /** Delete the webhook at Diagral if it is still the one this integration registered. */
+  async removeOwnWebhook(saved) {
+    try {
+      const current = await this.client.webhook();
+      if (current?.webhook_url && sha256(current.webhook_url) === saved.hash) {
+        await this.client.deleteWebhook();
+        logger.info('Gladys Plus webhook removed at Diagral: reads only');
+      }
+      await this.store.update({ webhook: undefined });
+    } catch (err) {
+      this.problem('webhook', `Diagral webhook not removed (${err.message})`);
     }
   }
 

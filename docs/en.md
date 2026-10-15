@@ -76,16 +76,26 @@ During an exit delay, the alarm is read every 30 seconds until it is armed.
 The Diagral cloud can tell an event through a **webhook**: alarm, arming or disarming, new fault. As
 Gladys is at your home, this webhook goes through **Gladys Plus**.
 
+> **Warning: Diagral keeps only one webhook per box.** If Home Assistant, Jeedom or another software
+> already receives the events of your alarm, ticking the option below replaces it: that other
+> software will no longer receive anything from Diagral.
+
+This is why the option **Real-time alarms (replaces another webhook)** is **off by default**. As long
+as it is off, Gladys never reads, changes nor deletes the webhook of your box. To turn it on:
+
 1. In Gladys Plus, create an Open API key (Settings → Open API).
 2. Paste it in the "Gladys Plus webhooks" block of the Configuration screen of the integration: it
    lists "Diagral events (alarms, armings, faults)".
-3. The integration registers the address at Diagral by itself.
+3. Tick **Real-time alarms (replaces another webhook)**: the integration registers the address at
+   Diagral.
 
-Diagral keeps **only one webhook per box**: if another tool (Home Assistant…) had registered one, it
-is replaced. Remove the key and the integration deletes its own at Diagral.
+Untick the option or remove the key: the integration deletes its webhook at Diagral, but only if it is
+still its own. The webhook of another software is never deleted.
 
-Without Gladys Plus, everything works by reads, except the **alarms**, which the Diagral cloud only
-tells through the webhook.
+**Without the option**, what stays and what is lost: the Diagral API has no event history. The state,
+the armed groups and the faults are still read at the chosen pace (5 minutes by default), and the
+arming and fault triggers work, with that delay. But an **alarm** is never seen: "Alarm in progress"
+has no value and the trigger "Diagral alarm triggered" never fires. "Changed by" stays empty.
 
 ### Actions
 
@@ -165,7 +175,7 @@ Output: "State after the command", most of the time an exit delay right after an
   the label and the code. A scan in the Discover tab tries again.
 - **"The Diagral cloud does not answer"**: the integration keeps trying and writes it once in the
   logs. Does the Diagral e-ONE app work?
-- **Nothing in real time**: check the Open API key in the "Gladys Plus webhooks" block. Another tool
+- **Nothing in real time**: is the option "Real-time alarms" ticked? Check also the Open API key in the "Gladys Plus webhooks" block. Another tool
   may have taken the webhook of your box back: Diagral keeps only one.
 - **More details**: set the variable `LOG_LEVEL=debug`. The logs never hold the password, the code,
   the API key nor the webhook address.
